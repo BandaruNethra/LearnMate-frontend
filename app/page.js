@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import OpenAI from 'openai';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -9,11 +9,13 @@ import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
   const router = useRouter();
+  
   // State for Profile Sync
   const [userName, setUserName] = useState('Explorer');
   const [userPic, setUserPic] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   
+  // AI States
   const [aiQuery, setAiQuery] = useState('');
   const [aiResponse, setAiResponse] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,41 +33,55 @@ export default function Dashboard() {
     if (videoRef.current) videoRef.current.play().catch(() => {});
   }, []);
 
+  // Debugging Environment Variables (Keep this until you verify it says "True")
+  useEffect(() => {
+    console.log("Checking Environment Variables...");
+    console.log("Key exists?", !!process.env.NEXT_PUBLIC_GROK_API_KEY);
+  }, []);
+
   const handleAiSearch = async (e) => {
-  e.preventDefault();
-  if (!aiQuery) return;
+    e.preventDefault();
+    
+    const API_KEY = process.env.NEXT_PUBLIC_GROK_API_KEY;
 
-  setIsLoading(true);
-  setAiResponse(""); 
+    if (!API_KEY) {
+      setAiResponse("Error: API Key is missing. Check your .env.local file in the frontend folder.");
+      return;
+    }
 
-  try {
-    const openai = new OpenAI({
-      baseURL: "https://api.groq.com/openai/v1",
-      // Paste your key directly inside these quotes
-      apiKey: process.env.NEXT_PUBLIC_GROK_API_KEY, 
-      dangerouslyAllowBrowser: true 
-    });
+    if (!aiQuery.trim()) return;
 
-    const completion = await openai.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
-      messages: [
-        { 
-          role: "system", 
-          content: "You are Grok, the brilliant and witty AI tutor. Student name: " + userName 
-        },
-        { role: "user", content: aiQuery }
-      ],
-    });
+    setIsLoading(true);
 
-    setAiResponse(completion.choices[0].message.content);
+    try {
+      const openai = new OpenAI({
+        baseURL: "https://api.groq.com/openai/v1",
+        apiKey: API_KEY,
+        dangerouslyAllowBrowser: true,
+      });
 
-  } catch (error) {
-    console.error("AI Error:", error);
-    setAiResponse("Grok is offline. Check your console for details.");
-  } finally {
-    setIsLoading(false);
-  }
-};
+      const completion = await openai.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: "You are LearnMate AI, a helpful log analysis tutor."
+          },
+          {
+            role: "user",
+            content: `Analyze this: ${aiQuery}`, // FIXED: Changed logData to aiQuery
+          },
+        ],
+        model: "llama-3.3-70b-versatile",
+      });
+
+      setAiResponse(completion.choices[0].message.content);
+    } catch (error) {
+      console.error("AI Error:", error);
+      setAiResponse("The AI is currently unavailable. Ensure your API key is correct and valid.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -75,7 +91,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-white pb-16 font-sans selection:bg-indigo-100 relative">
       
-      {/* --- NEW FLOATING PROFILE HEADER --- */}
+      {/* --- FLOATING PROFILE HEADER --- */}
       <header className="fixed top-6 right-6 z-[100]">
         <div className="relative">
           <button 
@@ -90,7 +106,6 @@ export default function Dashboard() {
             <ChevronDown size={16} className={`text-slate-400 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* DROPDOWN MENU */}
           {showDropdown && (
             <div className="absolute right-0 mt-3 w-56 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in duration-200">
               <div className="p-2">
@@ -129,19 +144,25 @@ export default function Dashboard() {
             <div className="flex-1 relative">
               <Sparkles className="absolute left-5 top-5 text-indigo-500" size={24} />
               <input 
-                type="text" value={aiQuery} onChange={(e) => setAiQuery(e.target.value)}
+                type="text" 
+                value={aiQuery} 
+                onChange={(e) => setAiQuery(e.target.value)}
                 placeholder="Ask your AI Tutor about Java, Certificates, or anything..."
                 className="w-full p-5 pl-14 bg-slate-100/50 rounded-2xl outline-none focus:ring-4 ring-indigo-500/20 font-bold transition-all text-slate-800 placeholder:text-slate-400"
               />
             </div>
-            <button className="bg-slate-900 text-white px-10 rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-lg active:scale-95">
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="bg-slate-900 text-white px-10 rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-lg active:scale-95 disabled:opacity-50"
+            >
               {isLoading ? <Loader2 className="animate-spin" /> : <Send size={22} />}
             </button>
           </form>
           {aiResponse && (
             <div className="mt-6 p-6 bg-slate-900 rounded-[2rem] text-indigo-100 font-medium leading-relaxed animate-in slide-in-from-bottom-4 shadow-2xl relative overflow-hidden">
                <div className="absolute top-0 right-0 p-4 opacity-10"><Sparkles size={40}/></div>
-               <p className="relative z-10">"{aiResponse}"</p>
+               <p className="relative z-10 whitespace-pre-wrap">{aiResponse}</p>
             </div>
           )}
         </div>
