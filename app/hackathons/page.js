@@ -65,7 +65,7 @@ export default function HackathonPage() {
   // 1. Load data from Backend "Database"
   const fetchHackathons = async () => {
     try {
-      const res = await fetch('http://localhost:8000/get-hackathons');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/get-hackathons`);
       if (!res.ok) throw new Error("Backend offline");
       const data = await res.json();
       
@@ -81,7 +81,7 @@ export default function HackathonPage() {
   const handleAISync = async () => {
     setSyncing(true);
     try {
-      const res = await fetch('http://localhost:8000/sync-hackathons', { method: 'POST' });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/sync-hackathons`, { method: 'POST' });
       const data = await res.json();
       setLastSync(data.time);
       await fetchHackathons(); // Refresh list after sync

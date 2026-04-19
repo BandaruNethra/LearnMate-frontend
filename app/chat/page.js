@@ -20,7 +20,7 @@ export default function AIChat() {
     }
 
     setAuthError(false);
-    fetch(`http://localhost:8000/chat/history/${userId}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/chat/history/${userId}`)
       .then(res => {
         if (!res.ok) throw new Error("Backend validation failed");
         return res.json();
@@ -61,14 +61,14 @@ export default function AIChat() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:8000/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: userId,
-          message: currentInput
-        })
-      });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        user_id: userId,
+        message: currentInput
+    })
+});
 
       if (!res.ok) throw new Error("Server rejected request");
 

@@ -63,7 +63,7 @@ function LabContent() {
     const userId = localStorage.getItem('learnmate_user_id');
     
     try {
-      await fetch(`http://localhost:8000/update-progress`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/update-progress`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

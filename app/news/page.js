@@ -11,7 +11,7 @@ export default function NewsPage() {
   useEffect(() => {
     const getNews = async () => {
       try {
-        const res = await fetch('http://localhost:8000/api/news');
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/news`);
         if (!res.ok) throw new Error("Failed to fetch from backend");
         const json = await res.json();
         
