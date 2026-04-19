@@ -21,8 +21,16 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const videoRef = useRef(null);
 
-  // Sync Data on Mount
+  // --- AUTH PROTECT & DATA SYNC ---
   useEffect(() => {
+    // 1. Check if user is logged in
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login'); // Kicks unauthenticated users to login page
+      return;
+    }
+
+    // 2. Load User Data
     const savedName = localStorage.getItem('learnmate_user_name');
     const savedPic = localStorage.getItem('learnmate_user_pic');
     
@@ -30,29 +38,32 @@ export default function Dashboard() {
     if (savedPic) setUserPic(savedPic);
     else setUserPic(`https://api.dicebear.com/7.x/avataaars/svg?seed=${savedName || 'Learner'}`);
 
+    // 3. Play Video
     if (videoRef.current) videoRef.current.play().catch(() => {});
-  }, []);
+  }, [router]);
 
-  // Debugging Environment Variables (Keep this until you verify it says "True")
+  // Debugging Environment Variables in Console
   useEffect(() => {
     console.log("Checking Environment Variables...");
-    console.log("Key exists?", !!process.env.NEXT_PUBLIC_GROK_API_KEY);
+    console.log("GROK Key found in browser:", !!process.env.NEXT_PUBLIC_GROK_API_KEY);
+    console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
   }, []);
 
   const handleAiSearch = async (e) => {
     e.preventDefault();
     
+    // Ensure you use the exact key name you saved in Netlify
     const API_KEY = process.env.NEXT_PUBLIC_GROK_API_KEY;
 
     if (!API_KEY) {
-      setAiResponse("Error: API Key is missing. Check your .env.local file in the frontend folder.");
+      setAiResponse("Error: API Key is missing. Make sure NEXT_PUBLIC_GROK_API_KEY is added to Netlify Environment Variables.");
       return;
     }
 
     if (!aiQuery.trim()) return;
 
     setIsLoading(true);
-
+    
     try {
       const openai = new OpenAI({
         baseURL: "https://api.groq.com/openai/v1",
@@ -68,7 +79,7 @@ export default function Dashboard() {
           },
           {
             role: "user",
-            content: `Analyze this: ${aiQuery}`, // FIXED: Changed logData to aiQuery
+            content: `Analyze this: ${aiQuery}`,
           },
         ],
         model: "llama-3.3-70b-versatile",
@@ -77,7 +88,7 @@ export default function Dashboard() {
       setAiResponse(completion.choices[0].message.content);
     } catch (error) {
       console.error("AI Error:", error);
-      setAiResponse("The AI is currently unavailable. Ensure your API key is correct and valid.");
+      setAiResponse("The AI is currently unavailable. Check your browser console for connection errors.");
     } finally {
       setIsLoading(false);
     }
